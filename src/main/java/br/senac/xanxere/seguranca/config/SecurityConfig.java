@@ -39,6 +39,8 @@ public class SecurityConfig {
             // ---------- AUTORIZAÇÃO por URL ----------
             // As regras são avaliadas na ordem: a primeira que casar com a URL vence.
             .authorizeHttpRequests(auth -> auth
+                // A tela de testes (index.html) é estática e pública; a proteção fica na API que ela chama.
+                .requestMatchers("/", "/index.html").permitAll()
                 .requestMatchers("/api/publico").permitAll()
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .requestMatchers("/api/professor/**").hasAnyRole("PROFESSOR", "ADMIN")
