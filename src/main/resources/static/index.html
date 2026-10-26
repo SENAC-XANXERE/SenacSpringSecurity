@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SenacSpringSecurity</title>
+  <style>
+    :root {
+      --fundo: #f4f6f9; --cartao: #ffffff; --texto: #1d2733; --mudo: #5b6b7c; --borda: #d9e0e8;
+      --primaria: #0f62fe; --ok: #1f8a4c; --aviso: #c47a00; --erro: #c62828; --mono: ui-monospace, Menlo, Consolas, monospace;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; background: var(--fundo); color: var(--texto); }
+    header { padding: 20px 16px 8px; max-width: 1040px; margin: 0 auto; }
+    header h1 { margin: 0 0 4px; font-size: 22px; }
+    header p { margin: 0; color: var(--mudo); font-size: 14px; }
+    main { max-width: 1040px; margin: 0 auto; padding: 8px 16px 32px; display: grid; gap: 16px; grid-template-columns: 1fr 1fr; }
+    @media (max-width: 760px) { main { grid-template-columns: 1fr; } }
+    section { background: var(--cartao); border: 1px solid var(--borda); border-radius: 10px; padding: 16px; }
+    section h2 { margin: 0 0 12px; font-size: 15px; text-transform: uppercase; letter-spacing: .04em; color: var(--mudo); }
+    label { display: block; font-size: 13px; color: var(--mudo); margin: 8px 0 4px; }
+    input { width: 100%; padding: 9px 10px; border: 1px solid var(--borda); border-radius: 6px; font-size: 15px; }
+    .linha { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+    button { padding: 9px 12px; border-radius: 6px; border: 1px solid var(--borda); background: #fff; color: var(--texto); font-size: 14px; cursor: pointer; }
+    button:hover { border-color: var(--primaria); color: var(--primaria); }
+    button.primaria { background: var(--primaria); border-color: var(--primaria); color: #fff; }
+    button.primaria:hover { filter: brightness(1.1); color: #fff; }
+    .atalhos button { font-family: var(--mono); font-size: 13px; }
+    #estado { margin-top: 12px; font-size: 14px; }
+    #estado .tag { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 12px; font-family: var(--mono); background: #e8eefc; color: var(--primaria); margin-right: 4px; }
+    .endpoints button { width: 100%; text-align: left; font-family: var(--mono); font-size: 13px; margin-bottom: 6px; display: flex; justify-content: space-between; }
+    .endpoints button small { font-family: system-ui, sans-serif; color: var(--mudo); }
+    .notas { display: flex; gap: 8px; align-items: center; }
+    .notas input { flex: 1; }
+    #resultado { grid-column: 1 / -1; }
+    .status { display: inline-block; font-family: var(--mono); font-weight: 700; font-size: 20px; padding: 4px 10px; border-radius: 6px; color: #fff; }
+    .s200 { background: var(--ok); } .s401 { background: var(--aviso); } .s403 { background: var(--erro); } .s0 { background: var(--mudo); }
+    .explica { margin: 8px 0 0; font-size: 14px; }
+    pre { background: #0f1720; color: #d7e2ee; padding: 12px; border-radius: 8px; overflow: auto; font-size: 13px; margin: 10px 0 0; }
+    details { margin-top: 10px; font-size: 13px; color: var(--mudo); }
+    #historico { grid-column: 1 / -1; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--borda); }
+    td.mono { font-family: var(--mono); }
+    .st { font-family: var(--mono); font-weight: 700; }
+    .st.c200 { color: var(--ok); } .st.c401 { color: var(--aviso); } .st.c403 { color: var(--erro); }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>SenacSpringSecurity</h1>
+    <p>Escolha um usuário, chame um endpoint e veja se a resposta é <b>200</b> (autorizado), <b>401</b> (não autenticado) ou <b>403</b> (autenticado, mas sem permissão).</p>
+  </header>
+
+  <main>
+    <section>
+      <h2>1. Autenticação (quem é você?)</h2>
+      <label for="login">Login</label>
+      <input id="login" autocomplete="username" placeholder="aluno, professor ou admin">
+      <label for="senha">Senha</label>
+      <input id="senha" type="password" autocomplete="current-password" placeholder="aluno123, prof123 ou admin123">
+      <div class="linha atalhos">
+        <button type="button" data-login="aluno" data-senha="aluno123">aluno</button>
+        <button type="button" data-login="professor" data-senha="prof123">professor</button>
+        <button type="button" data-login="admin" data-senha="admin123">admin</button>
+        <button type="button" data-login="aluno" data-senha="senha-errada">senha errada</button>
+      </div>
+      <div class="linha">
+        <button type="button" class="primaria" id="entrar">Entrar (GET /api/perfil)</button>
+        <button type="button" id="sair">Sair</button>
+      </div>
+      <div id="estado">Sem credenciais. As chamadas sairão sem o header <code>Authorization</code>.</div>
+      <details>
+        <summary>Como funciona</summary>
+        Não existe "sessão": o navegador guarda login e senha em memória e envia o header
+        <code>Authorization: Basic base64(login:senha)</code> em <b>cada</b> chamada. "Entrar" só chama
+        <code>/api/perfil</code> para confirmar que as credenciais valem. "Sair" apaga as credenciais.
+      </details>
+    </section>
+
+    <section>
+      <h2>2. Autorização (o que você pode fazer?)</h2>
+      <div class="endpoints">
+        <button type="button" data-url="/api/publico">GET /api/publico <small>permitAll</small></button>
+        <button type="button" data-url="/api/perfil">GET /api/perfil <small>authenticated</small></button>
+        <button type="button" data-url="/api/aluno">GET /api/aluno <small>ALUNO, PROFESSOR, ADMIN</small></button>
+        <button type="button" data-url="/api/professor">GET /api/professor <small>PROFESSOR, ADMIN</small></button>
+        <button type="button" data-url="/api/admin">GET /api/admin <small>ADMIN</small></button>
+      </div>
+      <label for="alunoNotas">GET /api/notas/{aluno} <small>(@PreAuthorize: professor/admin ou o próprio aluno)</small></label>
+      <div class="notas">
+        <input id="alunoNotas" value="aluno" placeholder="login do aluno">
+        <button type="button" id="buscarNotas">Buscar notas</button>
+      </div>
+    </section>
+
+    <section id="resultado">
+      <h2>Resposta</h2>
+      <div id="respostaVazia" style="color: var(--mudo); font-size: 14px;">Nenhuma chamada ainda.</div>
+      <div id="resposta" hidden>
+        <span class="status" id="statusCodigo"></span>
+        <span id="statusTexto" style="font-family: var(--mono); margin-left: 8px;"></span>
+        <p class="explica" id="explicacao"></p>
+        <pre id="corpo"></pre>
+        <details open>
+          <summary>Requisição enviada</summary>
+          <pre id="requisicao"></pre>
+        </details>
+      </div>
+    </section>
+
+    <section id="historico">
+      <h2>Histórico</h2>
+      <table>
+        <thead><tr><th>#</th><th>Usuário</th><th>Endpoint</th><th>Status</th><th>Significado</th></tr></thead>
+        <tbody id="linhasHistorico"></tbody>
+      </table>
+    </section>
+  </main>
+
+  <script>
+    const credenciais = { login: null, senha: null };
+    let contador = 0;
+
+    const $ = (id) => document.getElementById(id);
+
+    const significado = {
+      200: 'Autorizado. O filtro autenticou (se precisava) e a regra de autorização liberou.',
+      401: 'Não autenticado. Sem credenciais, senha errada ou usuário inexistente. Falha de AUTENTICAÇÃO.',
+      403: 'Autenticado, mas sem permissão para este recurso. Falha de AUTORIZAÇÃO.',
+      0:   'A API não respondeu. Ela está rodando em ./mvnw spring-boot:run?'
+    };
+
+    function atualizarEstado() {
+      if (credenciais.login) {
+        $('estado').innerHTML = 'Enviando como <span class="tag">' + credenciais.login + '</span> em cada chamada.';
+      } else {
+        $('estado').innerHTML = 'Sem credenciais. As chamadas sairão sem o header <code>Authorization</code>.';
+      }
+    }
+
+    function headerBasic() {
+      if (!credenciais.login) return null;
+      return 'Basic ' + btoa(credenciais.login + ':' + credenciais.senha);
+    }
+
+    async function chamar(url) {
+      const headers = {};
+      const auth = headerBasic();
+      if (auth) headers['Authorization'] = auth;
+
+      let status = 0, statusTexto = '', texto = '';
+      try {
+        const resp = await fetch(url, { headers });
+        status = resp.status;
+        statusTexto = resp.statusText;
+        texto = await resp.text();
+      } catch (e) {
+        texto = String(e);
+      }
+
+      let corpo = texto;
+      try { corpo = JSON.stringify(JSON.parse(texto), null, 2); } catch (_) { /* não é JSON */ }
+
+      $('respostaVazia').hidden = true;
+      $('resposta').hidden = false;
+      const st = $('statusCodigo');
+      st.textContent = status || 'sem resposta';
+      st.className = 'status s' + ([200, 401, 403].includes(status) ? status : 0);
+      $('statusTexto').textContent = statusTexto;
+      $('explicacao').textContent = significado[status] || 'Status ' + status + '.';
+      $('corpo').textContent = corpo || '(sem corpo)';
+      $('requisicao').textContent = 'GET ' + url + '\n' + (auth ? 'Authorization: ' + auth + '\n(' + credenciais.login + ':' + credenciais.senha + ' em base64)' : '(sem header Authorization)');
+
+      contador++;
+      const tr = document.createElement('tr');
+      tr.innerHTML = '<td>' + contador + '</td><td>' + (credenciais.login || '<i>sem login</i>') + '</td>'
+        + '<td class="mono">' + url + '</td><td class="st c' + status + '">' + (status || '—') + '</td>'
+        + '<td>' + (status === 200 ? 'autorizado' : status === 401 ? 'não autenticado' : status === 403 ? 'sem permissão' : 'sem resposta') + '</td>';
+      $('linhasHistorico').prepend(tr);
+      return status;
+    }
+
+    document.querySelectorAll('.atalhos button').forEach((b) => b.addEventListener('click', () => {
+      $('login').value = b.dataset.login;
+      $('senha').value = b.dataset.senha;
+    }));
+
+    $('entrar').addEventListener('click', async () => {
+      credenciais.login = $('login').value.trim();
+      credenciais.senha = $('senha').value;
+      if (!credenciais.login) { credenciais.login = null; }
+      atualizarEstado();
+      const status = await chamar('/api/perfil');
+      if (status !== 200) {
+        credenciais.login = null; credenciais.senha = null;
+        atualizarEstado();
+      }
+    });
+
+    $('sair').addEventListener('click', () => {
+      credenciais.login = null; credenciais.senha = null;
+      $('login').value = ''; $('senha').value = '';
+      atualizarEstado();
+    });
+
+    document.querySelectorAll('.endpoints button').forEach((b) => b.addEventListener('click', () => chamar(b.dataset.url)));
+    $('buscarNotas').addEventListener('click', () => chamar('/api/notas/' + encodeURIComponent($('alunoNotas').value.trim() || 'aluno')));
+  </script>
+</body>
+</html>

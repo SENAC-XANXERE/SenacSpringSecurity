@@ -18,6 +18,22 @@ O objetivo é enxergar cada peça do Spring Security sem ruído.
 A API sobe em `http://localhost:8080`. O log está em `DEBUG` para o pacote
 `org.springframework.security`, então dá para acompanhar cada filtro decidindo o que fazer.
 
+## Tela de testes
+
+Com a API no ar, abra `http://localhost:8080` no navegador. A página `index.html` (servida pelo
+próprio Spring Boot, pasta `static/`) deixa escolher um usuário, chamar cada endpoint e ver o
+status, o corpo da resposta e o header `Authorization` que foi enviado. Nada ali é protegido:
+a proteção está na API que a tela chama.
+
+## Testando com curl, Postman ou `.http`
+
+O guia passo a passo com tudo pronto para copiar e colar está em
+[docs/GUIA_CURL_POSTMAN.md](docs/GUIA_CURL_POSTMAN.md). Resumo:
+
+- `./scripts/testar-api.sh` roda todas as chamadas com curl e confere os códigos.
+- `postman/SenacSpringSecurity.postman_collection.json` importa no Postman com testes automáticos.
+- `docs/requisicoes.http` funciona no VS Code (REST Client) e no IntelliJ.
+
 ## Usuários de exemplo
 
 | Login       | Senha      | Papéis            |

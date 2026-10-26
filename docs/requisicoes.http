@@ -1,0 +1,61 @@
+### Requisições da API SenacSpringSecurity
+### VS Code: extensão "REST Client" | IntelliJ: suporte nativo
+@baseUrl = http://localhost:8080
+
+### 1. Rota pública, sem login -> 200
+GET {{baseUrl}}/api/publico
+
+### 2. Rota protegida sem credenciais -> 401
+GET {{baseUrl}}/api/perfil
+
+### 3. Senha errada -> 401
+GET {{baseUrl}}/api/perfil
+Authorization: Basic aluno senha-errada
+
+### 4. Usuário inexistente -> 401
+GET {{baseUrl}}/api/perfil
+Authorization: Basic ninguem qualquer
+
+### 5. Perfil do aluno -> 200
+GET {{baseUrl}}/api/perfil
+Authorization: Basic aluno aluno123
+
+### 6. Aluno na área do aluno -> 200
+GET {{baseUrl}}/api/aluno
+Authorization: Basic aluno aluno123
+
+### 7. Aluno na área do professor -> 403
+GET {{baseUrl}}/api/professor
+Authorization: Basic aluno aluno123
+
+### 8. Aluno na área admin -> 403
+GET {{baseUrl}}/api/admin
+Authorization: Basic aluno aluno123
+
+### 9. Professor na área do professor -> 200
+GET {{baseUrl}}/api/professor
+Authorization: Basic professor prof123
+
+### 10. Professor na área admin -> 403
+GET {{baseUrl}}/api/admin
+Authorization: Basic professor prof123
+
+### 11. Admin na área admin -> 200
+GET {{baseUrl}}/api/admin
+Authorization: Basic admin admin123
+
+### 12. Aluno vê as próprias notas -> 200
+GET {{baseUrl}}/api/notas/aluno
+Authorization: Basic aluno aluno123
+
+### 13. Aluno tenta ver notas de outro -> 403
+GET {{baseUrl}}/api/notas/outro
+Authorization: Basic aluno aluno123
+
+### 14. Professor vê notas de qualquer aluno -> 200
+GET {{baseUrl}}/api/notas/aluno
+Authorization: Basic professor prof123
+
+### 15. Header montado na mão (admin:admin123 em base64) -> 200
+GET {{baseUrl}}/api/admin
+Authorization: Basic YWRtaW46YWRtaW4xMjM=
